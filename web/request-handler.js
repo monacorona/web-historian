@@ -3,6 +3,7 @@ var archive = require('../helpers/archive-helpers');
 var fs = require('fs');
 var querystring = require('querystring');
 var htmlfetcher = require('../workers/htmlfetcher');
+var _ = require('underscore');
 
 // require more modules/folders here!
 
@@ -10,8 +11,10 @@ var headers = {
   'content-type': 'text/html'
 };
 
-var sendResponse = function(statusCode, response, data) {
+var sendResponse = function(statusCode, response, data, additionalHeaders) {
   statusCode = statusCode || 200;
+  additionalHeaders = additionalHeaders || {};
+  headers = _.extend(headers, additionalHeaders);
   response.writeHead(statusCode, headers);
   response.end(data);
 };
@@ -19,7 +22,6 @@ var sendResponse = function(statusCode, response, data) {
 exports.handleRequest = function (req, res) {
   //checks the url and the request method
   if (req.url === '/' && req.method === 'GET') {
-    console.log(req.url);
 
     fs.readFile(archive.paths.siteAssets + '/index.html', function(err, data) {
       if (err) {
@@ -42,15 +44,42 @@ exports.handleRequest = function (req, res) {
       
       archive.readListOfUrls(function(pathArray) {
 
-        archive.isUrlInList(responseBody.url, function(exists) {
+        archive.isUrlArchived(responseBody.url, function(exists) {
           if (exists) {
-            sendResponse(302, res, ''); 
+            console.log('URL Archive: ', exists);
+            
+            fs.readFile(archive.paths.archivedSites + '/' + responseBody.url, function(err, data) {
+              if (err) {
+                return console.error(err);
+              }
+
+              sendResponse(302, res, '', {'Location': 'http://127.0.0.1:8080/' + responseBody.url});
+              
+            });
+
+
+          } else {
+            console.log('URL Archive: Doesn\'t exist.');
+
+            archive.isUrlInList(responseBody.url, function(exists) {
+
+              if (!exists) {
+                archive.addUrlToList(responseBody.url, function() {
+                  // do nothing
+                });
+              }
+
+              fs.readFile(archive.paths.siteAssets + '/loading.html', function(err, data) {
+                if (err) {
+                  return console.error(err);
+                }
+
+                sendResponse(302, res, data.toString());              
+              });
+            });
           }
         });
 
-        archive.addUrlToList(responseBody.url, function() {
-          sendResponse(302, res, '');
-        });
       });
 
     });
@@ -60,7 +89,7 @@ exports.handleRequest = function (req, res) {
     sendResponse(201, res, 'testing!');
   } else {
     
-    // when a get request is sent to /www.google.com
+    // when a get request is sent to /www.domain.com
     var url = req.url.substr(1);
 
     archive.isUrlArchived(url, function(exists) {
@@ -78,12 +107,7 @@ exports.handleRequest = function (req, res) {
         sendResponse(404, res, 'Path not found');
       }
     });
-
-    
-
-
     // res.end('End');
   }
-
   // res.end(archive.paths.list);
 };

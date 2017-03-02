@@ -54,6 +54,7 @@ exports.isUrlInList = function(url, callback) {
 // @listPath - path to sites.txt
 exports.addUrlToList = function(url, callback) {
   fs.appendFile(exports.paths.list, url + '\n', function(err) {
+    console.log(url + '\n');
     if (err) {
       return console.error(err);
     }
