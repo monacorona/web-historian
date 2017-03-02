@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var async = require('async');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -25,38 +26,84 @@ exports.initialize = function(pathsObj) {
 // The following function names are provided to you to suggest how you might
 // modularize your code. Keep it clean!
 
-exports.readListOfUrls = function(listPath, callback) {
-  fs.readFile(listPath, function(err, data) {
+exports.readListOfUrls = function(callback) {
+
+  fs.readFile(exports.paths.list, function(err, data) {
     if (err) {
       return console.error(err);
     }
-
     callback(data.toString().split('\n'));
   });
 };
 
 // @list - array of url strings in sites.txt
-exports.isUrlInList = function(url, list, callback) {
-  if ( list.indexOf(url) ) {
-    return callback();
-  }
+exports.isUrlInList = function(url, callback) {
 
-  return false;
+  exports.readListOfUrls(function(list) {
+
+    var exists = list.indexOf(url) >= 0 ? true : false;
+
+    callback(exists);
+
+  });
+
 };
 
 // @listPath - path to sites.txt
-exports.addUrlToList = function(url, listPath, callback) {
-  fs.appendFile(listPath, url + '\n', function(err) {
+exports.addUrlToList = function(url, callback) {
+  fs.appendFile(exports.paths.list, url + '\n', function(err) {
     if (err) {
       return console.error(err);
     }
 
-    return callback();
+    callback();
   });
 };
 
 exports.isUrlArchived = function(url, callback) {
+
+  fs.readFile(exports.paths.archivedSites + '/' + url, function(err, data) {
+
+    var exists = err ? false : true;
+
+    callback(exists);
+
+  });
 };
 
 exports.downloadUrls = function(urls) {
+  // get the list of urls from sites.txt
+  exports.readListOfUrls(function(list) {
+    // download it by creating a folder with the url'
+    async.each(list, function(file, callback) {
+      fs.writeFile(exports.paths.archivedSites + '/' + file, file, function(err) {
+        if (err) {
+          console.error(err);
+        }
+      });
+    });
+  });
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

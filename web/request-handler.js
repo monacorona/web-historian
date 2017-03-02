@@ -38,15 +38,18 @@ exports.handleRequest = function (req, res) {
       body = body.toString();
 
       var responseBody = querystring.parse(body);
-      
-      archive.readListOfUrls(archive.paths.list, function(pathArray) {
 
-        // check if our target is inside
-        archive.isUrlInList(responseBody.url, pathArray, function() {
-          sendResponse(302, res, '');
+      // var urlTemp = archive.paths.list;
+      
+      archive.readListOfUrls(function(pathArray) {
+
+        archive.isUrlInList(responseBody.url, function(exists) {
+          if (exists) {
+            sendResponse(302, res, ''); 
+          }
         });
 
-        archive.addUrlToList(responseBody.url, archive.paths.list, function() {
+        archive.addUrlToList(responseBody.url, function() {
           sendResponse(302, res, '');
         });
       });
@@ -58,17 +61,23 @@ exports.handleRequest = function (req, res) {
     // when a get request is sent to /www.google.com
     var url = req.url.substr(1);
 
-    // check archived folder to see if site exists
-    fs.readFile(archive.paths.archivedSites + '/' + url, function(err, data) {
-      if (err) {
+    archive.isUrlArchived(url, function(exists) {
+      if (exists) {
+        // if exists, respond with file data
+        fs.readFile(archive.paths.archivedSites + '/' + url, function(err, data) {
+          if (err) {
+            return console.error(err);
+          }
+
+          // return file data
+          sendResponse(200, res, data.toString());
+        });
+      } else {
         sendResponse(404, res, 'Path not found');
-        return console.error(err);
       }
-
-      // return file data
-      sendResponse(200, res, data.toString());
-
     });
+
+    
 
 
     // res.end('End');
@@ -76,30 +85,3 @@ exports.handleRequest = function (req, res) {
 
   // res.end(archive.paths.list);
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

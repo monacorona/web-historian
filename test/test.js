@@ -144,7 +144,7 @@ describe('archive helpers', function() {
 
   describe('#downloadUrls', function () {
     it('should download all pending urls in the list', function (done) {
-      var urlArray = ['www.example.com', 'www.google.com'];
+      var urlArray = ['example1.com', 'example2.com', 'someurl.com', 'www.example.com'];
       archive.downloadUrls(urlArray);
 
       // Ugly hack to wait for all downloads to finish.

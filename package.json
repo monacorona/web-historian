@@ -17,6 +17,7 @@
     "lint": "eslint ./"
   },
   "dependencies": {
+    "async": "^2.1.5",
     "bluebird": "^3.3.4",
     "cron": "^1.1.0",
     "request": "^2.70.0",
