@@ -37,38 +37,22 @@ exports.handleRequest = function (req, res) {
     req.on('end', function() {
       body = body.toString();
 
-      var obj = querystring.parse(body);
-      console.log(obj.url);
-
-    
-      // open the file
-      fs.readFile(archive.paths.list, function(err, data) {
-        if (err) {
-          return console.error(err);
-        }
-        // split the string
-        var pathArray = data.toString().split('\n');
+      var responseBody = querystring.parse(body);
+      
+      archive.readListOfUrls(archive.paths.list, function(pathArray) {
 
         // check if our target is inside
-        if (pathArray.indexOf(obj.url) >= 0) {
+        archive.isUrlInList(responseBody.url, pathArray, function() {
           sendResponse(302, res, '');
-        } else {
+        });
 
-          fs.appendFile(archive.paths.list, obj.url + '\n', function(err) {
-            if (err) {
-              console.error(err);
-            }
-          });
-
+        archive.addUrlToList(responseBody.url, archive.paths.list, function() {
           sendResponse(302, res, '');
-          
-        }
-
+        });
       });
 
     });
 
-    // res.end();
   } else {
     
     // when a get request is sent to /www.google.com
