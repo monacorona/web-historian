@@ -2,6 +2,7 @@ var path = require('path');
 var archive = require('../helpers/archive-helpers');
 var fs = require('fs');
 var querystring = require('querystring');
+var htmlfetcher = require('../workers/htmlfetcher');
 
 // require more modules/folders here!
 
@@ -28,7 +29,7 @@ exports.handleRequest = function (req, res) {
     });
 
   } else if ( req.method === 'POST' ) {
-    // if request is POST
+
     var body = '';
     req.on('data', function(chunk) {
       body += chunk;
@@ -38,8 +39,6 @@ exports.handleRequest = function (req, res) {
       body = body.toString();
 
       var responseBody = querystring.parse(body);
-
-      // var urlTemp = archive.paths.list;
       
       archive.readListOfUrls(function(pathArray) {
 
@@ -56,6 +55,9 @@ exports.handleRequest = function (req, res) {
 
     });
 
+  } else if (req.url === '/test' && req.method === 'GET') {
+    htmlfetcher.download();
+    sendResponse(201, res, 'testing!');
   } else {
     
     // when a get request is sent to /www.google.com

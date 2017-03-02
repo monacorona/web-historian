@@ -2,6 +2,8 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
 var async = require('async');
+var http = require('http');
+var request = require('request');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -72,15 +74,32 @@ exports.isUrlArchived = function(url, callback) {
 };
 
 exports.downloadUrls = function(urls) {
+  console.log('download!!!!!!');
   // get the list of urls from sites.txt
   exports.readListOfUrls(function(list) {
     // download it by creating a folder with the url'
     async.each(list, function(file, callback) {
-      fs.writeFile(exports.paths.archivedSites + '/' + file, file, function(err) {
-        if (err) {
-          console.error(err);
-        }
+      // download the HTML from the site
+      request.get('http://' + file, function(error, res, body) {
+        fs.writeFile(exports.paths.archivedSites + '/' + file, body, function(err) {
+          if (err) {
+            console.error(err);
+          }
+          // remove successful written file from the URLs array
+          list.splice(list.indexOf(file), 1);
+
+          fs.writeFile(exports.paths.list, list.join('\n'), function(err) {
+            if (err) {
+              console.error(err);
+            }
+          });
+
+        });
       });
+    }, function(err) {
+      if (err) {
+        console.log(err);
+      }      
     });
   });
 };
